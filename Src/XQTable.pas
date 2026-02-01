@@ -184,6 +184,7 @@ type
     tbtNextStep: TToolButton;
     tbtLastStep: TToolButton;
     tbtDelStep: TToolButton;
+    tbtToggleHints: TToolButton;
     pnlVarStepButtons: TPanel;
     pnlPlayRecMemo: TPanel;
     memPlayRec: TMemo;
@@ -196,6 +197,7 @@ type
     actPlayRecNext: TAction;
     actPlayRecLast: TAction;
     actPlayRecDelete: TAction;
+    actToggleHints: TAction;
     pnlAddVarStepHint: TPanel;
     lblAddPlayVarHint: TLabel;
     lblBigHint: TLabel;
@@ -375,6 +377,7 @@ type
     procedure tbtSelectQiTuTextClick(Sender: TObject);
     procedure ppmPasteQipuClick(Sender: TObject);
     procedure tstXQInfoCShow(Sender: TObject);
+    procedure actToggleHintsExecute(Sender: TObject);
     procedure tmrMoveBlinkTimer(Sender: TObject);
     procedure imgXQBoardMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -400,6 +403,7 @@ type
     FDragImgXY      : TImage;
     FReverseBoardH  : Boolean;
     FNextMoveMarks  : TList;
+    isShowHints    : Boolean;
     procedure dSetupXQBoard;                            // 设置棋盘
     procedure dSetAddVarStepMode(tf: dTBoolean);
     procedure ClearNextMoveMarks;
@@ -473,6 +477,21 @@ uses XQMain, XQWizard, XQSearch;
 //-------------------------------------------------------------------------
 //
 //.........................................................................
+procedure TfrmXQTable.actToggleHintsExecute(Sender: TObject);
+begin
+  isShowHints := not isShowHints;
+  if isShowHints then
+  begin
+    actToggleHints.Checked := True;
+    ShowNextMovesForCurrentNode;
+  end
+  else
+  begin
+    actToggleHints.Checked := False;
+    ClearNextMoveMarks;
+  end;
+end;
+
 procedure TfrmXQTable.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   Action := caFree;
@@ -542,6 +561,7 @@ var
   X, Y      : Integer;
 begin
   ClearNextMoveMarks;
+  if (not isShowHints) then Exit;
   if (XQ = nil) or (XQ.DispNode = nil) then Exit;
 
   // 根据下一步的起手方决定颜色，若 WhoPlay 未同步，以第一个子节点判断
@@ -671,6 +691,17 @@ begin
   pnlRightMargin.Width := 3;
 
   XQ := nil;
+  isShowHints := True;
+  actToggleHints := TAction.Create(Self);
+  actToggleHints.ActionList := aclXQTable;
+  actToggleHints.Caption := '显示走法提示';
+  actToggleHints.ShortCut := ShortCut(Ord('Z'), []);
+  actToggleHints.OnExecute := actToggleHintsExecute;
+  actToggleHints.Checked := True;
+  tbtToggleHints := TToolButton.Create(tlbPlayRec);
+  tbtToggleHints.Parent := tlbPlayRec;
+  tbtToggleHints.Style := tbsCheck;
+  tbtToggleHints.Action := actToggleHints;
   FNextMoveMarks := TList.Create;
 
   // 设置象棋盘
@@ -1152,7 +1183,7 @@ begin
   begin
     Height := 28;
     tlbPlayRec.Height := 28;
-    tlbPlayRec.Width  := 121;
+    tlbPlayRec.Width  := 145;
     tlbPlayRec.Left   := (Width  - tlbPlayRec.Width ) div 2;
     tlbPlayRec.Top    := (Height - tlbPlayRec.Height) div 2;
   end;

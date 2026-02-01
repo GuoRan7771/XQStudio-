@@ -37,7 +37,12 @@ Note: Some characters of this file are Simplified Chinese characters
       encoded with GB2312/GB18030 standard
 
 
-维护补充 / Additional Note (2026-02-01)
-- 本次维护目的 / Purpose: 个人使用，增加可开关的红/黑走法提示点，便于查看下一手落点。
-- 无核心逻辑改动 / No core logic change; purely UI overlay and toolbar toggle.
+维护与更新说明 (2026-02-01)
+- 目的：个人使用，增加可开关的红/黑走法提示点，便于查看下一手落点。
+- 新功能：工具栏开关按钮 + 快捷键 Z，可快速显示/隐藏当前一方所有候选落点（红/黑点），默认开启；已为按钮预留空间，不遮挡“上一手/下一手”等原有控件。
+- 影响：仅界面呈现与交互，核心逻辑与存盘格式保持不变，便于日常复盘与演示。
 
+Maintenance & Update (2026-02-01)
+- Purpose: Personal use; add toggleable red/black move hint dots to preview next moves.
+- Feature: Toolbar toggle button plus hotkey Z to show/hide all candidate targets for the side to move; default on; spacing adjusted so existing navigation buttons are unobstructed.
+- Scope: UI-only display and interaction; core logic and save format unchanged, suitable for daily review and demos.
