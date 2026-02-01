@@ -399,8 +399,11 @@ type
     { Private declarations }
     FDragImgXY      : TImage;
     FReverseBoardH  : Boolean;
+    FNextMoveMarks  : TList;
     procedure dSetupXQBoard;                            // 设置棋盘
     procedure dSetAddVarStepMode(tf: dTBoolean);
+    procedure ClearNextMoveMarks;
+    procedure ShowNextMovesForCurrentNode;
     function  imgGetImgXY(X, Y: Integer): TImage;       // 取(x,y)处交叉点
   public
 
@@ -517,6 +520,73 @@ end;
 //-------------------------------------------------------------------------
 // 设置象棋盘
 //.........................................................................
+procedure TfrmXQTable.ClearNextMoveMarks;
+var
+  i: Integer;
+begin
+  if FNextMoveMarks = nil then Exit;
+  for i := 0 to FNextMoveMarks.Count - 1 do
+    TObject(FNextMoveMarks[i]).Free;
+  FNextMoveMarks.Clear;
+end;
+
+procedure TfrmXQTable.ShowNextMovesForCurrentNode;
+const
+  cHintSize = 18;
+var
+  PN        : dTXQPlayNode;
+  expectRed : Boolean;
+  idx       : dTINT32;
+  img       : TImage;
+  shp       : TShape;
+  X, Y      : Integer;
+begin
+  ClearNextMoveMarks;
+  if (XQ = nil) or (XQ.DispNode = nil) then Exit;
+
+  // 根据下一步的起手方决定颜色，若 WhoPlay 未同步，以第一个子节点判断
+  PN := XQ.DispNode.LChild;
+  if PN = nil then Exit;
+  idx := XQ.iQiziIndexAtXY(PN.XYf);
+  expectRed := (idx >= 1) and (idx <= 16);
+
+  while PN <> nil do
+  begin
+    idx := XQ.iQiziIndexAtXY(PN.XYf);
+    if expectRed then
+    begin
+      if (idx < 1) or (idx > 16) then begin PN := PN.RChild; Continue; end;
+    end
+    else
+    begin
+      if (idx < 17) or (idx > 32) then begin PN := PN.RChild; Continue; end;
+    end;
+
+    X := PN.XYt div 10;
+    Y := PN.XYt mod 10;
+    if (X < 0) or (X > 8) or (Y < 0) or (Y > 9) then begin PN := PN.RChild; Continue; end;
+    img := imgXY[X, Y];
+    if img <> nil then
+    begin
+      shp := TShape.Create(Self);
+      shp.Parent := img.Parent;
+      shp.Shape  := stCircle;
+      shp.Width  := cHintSize;
+      shp.Height := cHintSize;
+      shp.Brush.Style := bsSolid;
+      if expectRed then shp.Brush.Color := clRed else shp.Brush.Color := clBlack;
+      shp.Pen.Color := clWhite;
+      shp.Pen.Width := 2;
+      shp.Left := img.Left + (img.Width - cHintSize) div 2;
+      shp.Top  := img.Top  + (img.Height - cHintSize) div 2;
+      shp.Enabled := False;           // UI 提示，不拦截鼠标
+      shp.BringToFront;
+      FNextMoveMarks.Add(shp);
+    end;
+    PN := PN.RChild;
+  end;
+end;
+
 procedure TfrmXQTable.dSetupXQBoard;
 var
   picQZ : dTXQZPIC;
@@ -601,6 +671,7 @@ begin
   pnlRightMargin.Width := 3;
 
   XQ := nil;
+  FNextMoveMarks := TList.Create;
 
   // 设置象棋盘
   dSetupXQBoard;
@@ -865,6 +936,8 @@ end;
 //.........................................................................
 procedure TfrmXQTable.FormDestroy(Sender: TObject);
 begin
+  ClearNextMoveMarks;
+  FreeAndNil(FNextMoveMarks);
   XQ.Free;
 end;
 
@@ -1173,6 +1246,7 @@ begin
       actPlayVarUp.Enabled     := False;
       actPlayVarDown.Enabled   := False;
     end;
+    ShowNextMovesForCurrentNode;
   end;
 end;
 
