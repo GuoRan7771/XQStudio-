@@ -399,9 +399,12 @@ type
     { Private declarations }
     FDragImgXY      : TImage;
     FReverseBoardH  : Boolean;
+    FNextMoveMarks  : TList;
     procedure dSetupXQBoard;                            // 设置棋盘
     procedure dSetAddVarStepMode(tf: dTBoolean);
     function  imgGetImgXY(X, Y: Integer): TImage;       // 取(x,y)处交叉点
+    procedure ClearNextMoveMarks;
+    procedure ShowNextMovesForXY(XY: dTByte);
   public
 
     XQFileName : string;
@@ -517,6 +520,93 @@ end;
 //-------------------------------------------------------------------------
 // 设置象棋盘
 //.........................................................................
+procedure TfrmXQTable.ClearNextMoveMarks;
+var
+  i: Integer;
+begin
+  if FNextMoveMarks = nil then Exit;
+  for i := 0 to FNextMoveMarks.Count - 1 do
+  begin
+    TObject(FNextMoveMarks[i]).Free;
+  end;
+  FNextMoveMarks.Clear;
+end;
+
+procedure TfrmXQTable.ShowNextMovesForXY(XY: dTByte);
+const
+  cHintSize = 18;
+var
+  PN        : dTXQPlayNode;
+  idx       : dTINT32;
+  expectRed : Boolean;
+  img       : TImage;
+  shp       : TShape;
+  X, Y      : Integer;
+  function IsNodeColorMatch(Node: dTXQPlayNode): Boolean;
+  var
+    pieceIdx: dTINT32;
+  begin
+    pieceIdx := XQ.iQiziIndexAtXY(Node.XYf);
+    if pieceIdx = 0 then
+    begin
+      Result := False;
+      Exit;
+    end;
+    if expectRed then
+      Result := (pieceIdx >= 1) and (pieceIdx <= 16)
+    else
+      Result := (pieceIdx >= 17) and (pieceIdx <= 32);
+  end;
+begin
+  ClearNextMoveMarks;
+
+  if (XQ = nil) or (XQ.DispNode = nil) then Exit;
+  if (tmrAutoPlay.Enabled) or IsAutoPlaying then Exit;
+
+  idx := XQ.iQiziIndexAtXY(XY);
+  expectRed := (XQ.WhoPlay = wpRed);
+
+  if expectRed then
+  begin
+    if (idx < 1) or (idx > 16) then Exit;
+  end
+  else
+  begin
+    if (idx < 17) or (idx > 32) then Exit;
+  end;
+
+  PN := XQ.DispNode.LChild;
+  while PN <> nil do
+  begin
+    if (PN.XYf = XY) and IsNodeColorMatch(PN) then
+    begin
+      X := PN.XYt div 10;
+      Y := PN.XYt mod 10;
+      img := imgXY[X, Y];
+      if img <> nil then
+      begin
+        shp := TShape.Create(Self);
+        shp.Parent := img.Parent;
+        shp.Shape  := stCircle;
+        shp.Width  := cHintSize;
+        shp.Height := cHintSize;
+        shp.Brush.Style := bsSolid;
+        if expectRed then
+          shp.Brush.Color := clRed
+        else
+          shp.Brush.Color := clBlack;
+        shp.Pen.Color := clWhite;
+        shp.Pen.Width := 2;
+        shp.Left := img.Left + (img.Width - cHintSize) div 2;
+        shp.Top  := img.Top  + (img.Height - cHintSize) div 2;
+        shp.BringToFront;
+        FNextMoveMarks.Add(shp);
+      end;
+    end;
+    PN := PN.RChild;
+  end;
+end;
+
 procedure TfrmXQTable.dSetupXQBoard;
 var
   picQZ : dTXQZPIC;
@@ -601,6 +691,7 @@ begin
   pnlRightMargin.Width := 3;
 
   XQ := nil;
+  FNextMoveMarks := TList.Create;
 
   // 设置象棋盘
   dSetupXQBoard;
@@ -656,10 +747,12 @@ end;
 procedure TfrmXQTable.imgXYClick(Sender: TObject);
 begin
   if (Sender=nil) then Exit;
-  with Sender as TImage do
+  if (tmrAutoPlay.Enabled) or IsAutoPlaying then
   begin
-
+    ClearNextMoveMarks;
+    Exit;
   end;
+  ShowNextMovesForXY((Sender as TImage).Tag);
 end;
 
 // DblClick
@@ -865,6 +958,8 @@ end;
 //.........................................................................
 procedure TfrmXQTable.FormDestroy(Sender: TObject);
 begin
+  ClearNextMoveMarks;
+  FreeAndNil(FNextMoveMarks);
   XQ.Free;
 end;
 
@@ -967,6 +1062,7 @@ var
   i      : dTInt32;
   sPlayer: string;
 begin
+  ClearNextMoveMarks;
   case tf of
     True:
       begin
@@ -1157,6 +1253,7 @@ begin
   if frmMain.ActiveXQTable = nil then Exit;
   with frmMain.ActiveXQTable do
   begin
+    ClearNextMoveMarks;
     if XQ.isAddVarStep then Exit;
     actPlayRecFirst.Enabled := (XQ.DispStepNo<>0);
     actPlayRecPrior.Enabled := (XQ.DispStepNo<>0);
