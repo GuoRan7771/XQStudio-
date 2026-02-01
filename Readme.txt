@@ -1,6 +1,6 @@
 XQStduio Source Code (http://www.qipaile.net/xqstudio)
 
-Copyright (c) 1998-2008, DONG Shiwei (����ΰ or ������) 
+Copyright (c) 1998-2008, DONG Shiwei (董世伟 or 过河象) 
 All rights reserved.
 
 The source codes are writen by using delphi 5.0.
@@ -35,3 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Note: Some characters of this file are Simplified Chinese characters 
       encoded with GB2312/GB18030 standard
+
+
+维护补充 / Additional Note (2026-02-01)
+- 本次维护目的 / Purpose: 个人使用，增加可开关的红/黑走法提示点，便于查看下一手落点。
+- 无核心逻辑改动 / No core logic change; purely UI overlay and toolbar toggle.
+
