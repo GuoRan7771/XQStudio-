@@ -1,6 +1,10 @@
-个人原因很想要新功能，但是原项目停更很久了，所以决定自己维护，做一些小功能的更新，最新版本可以在release中找到，以下是更新内容说明和版权说明：\
+个人原因很想要新功能，但是原项目停更很久了，所以决定自己维护，做一些小功能的更新，最新版本可以在release中找到，以下是更新内容说明和版权说明：
 
 For personal reasons, I strongly wanted some new features. Since the original project has been unmaintained for a long time, I decided to maintain it myself and implement several small functional updates. The latest version can be found in the Releases section. Below are the update notes and copyright information:
+
+下载/download
+
+[XQStudio.exe](https://github.com/GuoRan7771/XQStudio-/releases/download/XQStudio_latest/XQStudio.exe)
 
 维护与更新说明 (2026-02-01)
 - 目的：个人使用，增加可开关的红/黑走法提示点，便于查看下一手落点。
