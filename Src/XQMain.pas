@@ -364,6 +364,7 @@ type
 
     procedure dAutoPlayNextFile;
     procedure dUpdateCurrentFileLabel(const AFilePath: string);
+    procedure dSyncActiveXQTableState;
     function  OpenXQF(const Name: String): Boolean;
     procedure dEnableXQTableMenuItem(ABool: Boolean);
     procedure dLoadFileList;
@@ -806,6 +807,26 @@ begin
   dUpdateFolderNavigationState;
 end;
 
+procedure TfrmMain.dSyncActiveXQTableState;
+begin
+  if ActiveMDIChild is TfrmXQTable then
+    ActiveXQTable := TfrmXQTable(ActiveMDIChild)
+  else
+    ActiveXQTable := nil;
+
+  dEnableXQTableMenuItem(ActiveXQTable <> nil);
+
+  if ActiveXQTable <> nil then
+  begin
+    Caption := dCVersionInfo + ' - ' + ExtractFileName(ActiveXQTable.XQFileName);
+    dUpdateCurrentFileLabel(ActiveXQTable.XQFileName);
+  end
+  else
+  begin
+    Caption := dCVersionInfo;
+  end;
+end;
+
 procedure TfrmMain.actFileOpenFolderExecute(Sender: TObject);
 var
   sFolder: string;
@@ -862,6 +883,8 @@ begin
 
   if (oldTable <> nil) and (oldTable <> ActiveXQTable) then
     oldTable.Close;
+
+  dSyncActiveXQTableState;
 end;
 
 procedure TfrmMain.actFolderNextFileExecute(Sender: TObject);
@@ -886,6 +909,8 @@ begin
 
   if (oldTable <> nil) and (oldTable <> ActiveXQTable) then
     oldTable.Close;
+
+  dSyncActiveXQTableState;
 end;
 
 procedure TfrmMain.actHelpAboutExecute(Sender: TObject);
