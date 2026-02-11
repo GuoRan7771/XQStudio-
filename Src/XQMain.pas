@@ -846,16 +846,28 @@ begin
 end;
 
 procedure TfrmMain.actFolderPrevFileExecute(Sender: TObject);
+var
+  targetIndex: Integer;
+  oldTable   : TfrmXQTable;
 begin
   if (FFolderFiles = nil) or (FFolderFiles.Count = 0) then Exit;
   if FCurrentFolderIndex <= 0 then Exit;
 
-  dOpenFolderFileFromIndex(FCurrentFolderIndex - 1, -1);
+  targetIndex := FCurrentFolderIndex - 1;
+  oldTable := ActiveXQTable;
+  if (oldTable = nil) and (ActiveMDIChild is TfrmXQTable) then
+    oldTable := TfrmXQTable(ActiveMDIChild);
+
+  if not dOpenFolderFileFromIndex(targetIndex, -1) then Exit;
+
+  if (oldTable <> nil) and (oldTable <> ActiveXQTable) then
+    oldTable.Close;
 end;
 
 procedure TfrmMain.actFolderNextFileExecute(Sender: TObject);
 var
   startIndex: Integer;
+  oldTable  : TfrmXQTable;
 begin
   if (FFolderFiles = nil) or (FFolderFiles.Count = 0) then Exit;
 
@@ -864,7 +876,16 @@ begin
   else
     startIndex := FCurrentFolderIndex + 1;
 
-  dOpenFolderFileFromIndex(startIndex, 1);
+  if startIndex >= FFolderFiles.Count then Exit;
+
+  oldTable := ActiveXQTable;
+  if (oldTable = nil) and (ActiveMDIChild is TfrmXQTable) then
+    oldTable := TfrmXQTable(ActiveMDIChild);
+
+  if not dOpenFolderFileFromIndex(startIndex, 1) then Exit;
+
+  if (oldTable <> nil) and (oldTable <> ActiveXQTable) then
+    oldTable.Close;
 end;
 
 procedure TfrmMain.actHelpAboutExecute(Sender: TObject);
@@ -890,7 +911,7 @@ var
   function dAddNavIcon(const FileName: string): Integer;
   var
     bmpMask: TBitmap;
-    paths  : array[0..3] of string;
+    paths  : array[0..4] of string;
     i      : Integer;
   begin
     Result := -1;
@@ -899,8 +920,9 @@ var
       bmpMask.Transparent := True;
       paths[0] := baseDir + FileName;
       paths[1] := GetCurrentDir + '\Bitmap\' + FileName;
-      paths[2] := 'C:\Users\guo\Documents\XQStudio-\Bitmap\' + FileName;
-      paths[3] := '/Users/guo/Documents/XQStudio-/Bitmap/' + FileName;
+      paths[2] := baseDir + '..\Bitmap\' + FileName;
+      paths[3] := 'C:\Users\guo\Documents\XQStudio-\Bitmap\' + FileName;
+      paths[4] := '/Users/guo/Documents/XQStudio-/Bitmap/' + FileName;
       for i := 0 to High(paths) do
       begin
         if FileExists(paths[i]) then
@@ -910,6 +932,7 @@ var
           Break;
         end;
       end;
+
     finally
       bmpMask.Free;
     end;

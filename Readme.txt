@@ -8,24 +8,21 @@ For personal reasons, I strongly wanted some new features. Since the original pr
 
 [XQStudio.exe](https://github.com/GuoRan7771/XQStudio-/releases/download/XQStudio_latest/XQStudio.exe)
 
-维护与更新说明 (2026-02-11-晚)
-- 新功能：在“文件/打开”下新增“打开文件夹…”，按文件名升序加载所选文件夹内受支持的棋谱文件并自动打开第一个，不支持的文件自动跳过。
-- 浏览优化：工具栏新增“上一文件 / 下一文件”按钮，并在旁边显示当前文件名，便于在同一文件夹内快速切换棋谱。
-
-Maintenance & Update (2026-02-11 PM)
-- Feature: Added “Open Folder…” under File/Open; loads supported game files from the chosen folder (name-sorted) and opens the first one; unsupported files are skipped.
-- Navigation: Toolbar now provides “Previous File / Next File” buttons plus a filename label for quick sibling navigation.
 维护与更新说明 (2026-02-11)
-- 目的：解决窗口拉伸时组件大小固定的问题，让棋盘与棋谱区域可随窗口大小调整，提升大屏/小屏使用体验。
-- 新功能：棋盘窗口支持等比例缩放——棋盘背景、棋子/落子标记、走法提示点会随窗口拉伸自动缩放与重排；右侧棋谱/备注区域高度随窗口自适应伸缩。
-- 推演改进：推演棋盘默认打开的窗口横向更宽，并默认显示右侧棋谱模块（不再默认“只显示棋盘”），便于推演时直接看到棋谱。
-- 影响：仅界面布局与显示行为调整，不改变走棋、推演、棋谱导入导出与存盘格式等核心功能。
+- 目的：解决窗口拉伸时组件固定尺寸的问题，让棋盘与棋谱区域自适应大小；同时补齐批量打开和同目录快速切换体验。
+- 界面缩放：棋盘窗口等比例缩放，棋盘背景、棋子/落子标记、走法提示点随窗口拉伸自动缩放与重排；右侧棋谱/备注区域高度同步伸缩。
+- 推演改进：推演棋盘默认横向更宽，且默认显示右侧棋谱模块（不再默认“只显示棋盘”），便于推演时直接查看棋谱。
+- 批量打开：在“文件/打开”下新增“打开文件夹…”，按文件名升序加载所选文件夹内受支持的棋谱文件并自动打开第一个，不支持的文件会跳过。
+- 导航优化：工具栏提供“上一文件 / 下一文件”按钮并显示当前文件名；点击上一/下一时先打开目标文件，再自动关闭之前的窗口，单击即可完成切换，避免窗口堆叠。
+- 影响范围：仅界面布局、渲染和浏览体验调整，走棋逻辑、推演流程、导入导出与存盘格式保持不变。
 
 Maintenance & Update (2026-02-11)
-- Purpose: Fix the issue where the UI kept a fixed size when resizing the window; make the board and record panels adapt to different screen sizes.
-- Feature: The chessboard window now scales proportionally—board background, piece/last-move markers, and move hint dots scale and re-layout automatically when resizing; the record/remark panels on the right also resize properly.
-- Demo: The “Demo” (analysis) window opens wider by default and shows the record panel by default (no longer “board-only”), so the record module is visible immediately.
-- Scope: UI layout and rendering only; core logic, analysis flow, import/export, and save format remain unchanged.
+- Purpose: Make the UI resize-friendly (board + record areas) and smooth out folder batch open and sibling navigation.
+- UI Scaling: Board window scales proportionally; board background, piece/last-move markers, and move-hint dots resize and reflow with the window; record/remark panels resize vertically as well.
+- Demo Default: The analysis window opens wider and shows the record panel by default (no longer board-only) for immediate context.
+- Folder Open: Added “Open Folder…” under File/Open; loads supported game files in name order from the chosen folder and opens the first one; unsupported files are skipped.
+- Navigation: Toolbar has “Previous / Next File” buttons plus current filename; switching now opens the target file first and then closes the previous window automatically, so one click switches without window stacking.
+- Scope: UI layout/rendering and navigation experience only; core gameplay logic, analysis flow, import/export, and save format remain unchanged.
 
 维护与更新说明 (2026-02-01)
 - 目的：个人使用，增加可开关的红/黑走法提示点，便于查看下一手落点。
