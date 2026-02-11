@@ -55,6 +55,7 @@ type
     mnuFileGroup: TMenuItem;
     FileNewItem: TMenuItem;
     FileOpenItem: TMenuItem;
+    FileOpenFolderItem: TMenuItem;
     FileCloseItem: TMenuItem;
     mnuWindowGroup: TMenuItem;
     mnuHelpGroup: TMenuItem;
@@ -78,6 +79,7 @@ type
     actFileSave: TAction;
     actFileExit: TAction;
     actFileOpen: TAction;
+    actFileOpenFolder: TAction;
     actFileSaveAs: TAction;
     actWinMinimizeAll: TWindowMinimizeAll;
     actHelpAbout: TAction;
@@ -147,8 +149,14 @@ type
     reverseHItem: TMenuItem;
     tbtViewReverseH: TToolButton;
     actFileSearch: TAction;
+    actFolderPrevFile: TAction;
+    actFolderNextFile: TAction;
     FileSearchItem: TMenuItem;
     tbtFileSearch: TToolButton;
+    ToolButton17: TToolButton;
+    tbtFolderPrev: TToolButton;
+    tbtFolderNext: TToolButton;
+    tbtCurrentFile: TToolButton;
     ToolButton6: TToolButton;
     N3: TMenuItem;
     HelpTips: TMenuItem;
@@ -254,9 +262,11 @@ type
     actToolsBmpToFile: TAction;
     procedure actFileNewExecute(Sender: TObject);
     procedure actFileOpenExecute(Sender: TObject);
+    procedure actFileOpenFolderExecute(Sender: TObject);
     procedure actHelpAboutExecute(Sender: TObject);
     procedure actFileExitExecute(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure actFileSaveExecute(Sender: TObject);
     procedure actFileSaveAsExecute(Sender: TObject);
     procedure actFilePExecute(Sender: TObject);
@@ -284,6 +294,8 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure actViewReverseHExecute(Sender: TObject);
     procedure actFileSearchExecute(Sender: TObject);
+    procedure actFolderPrevFileExecute(Sender: TObject);
+    procedure actFolderNextFileExecute(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure HelpTipsClick(Sender: TObject);
     procedure actToolsAutoPlayExecute(Sender: TObject);
@@ -321,8 +333,16 @@ type
     IsFileListLoaded: Boolean;
     FFileList   : array [1..9] of string;
 
+    FFolderFiles        : TStringList;
+    FCurrentFolder      : String;
+    FCurrentFolderIndex : Integer;
+
     procedure dCreateXQTable(const Name: string);
     procedure dUpgradeXQFFile(sFileName: string);
+    procedure dResetFolderNavigation;
+    procedure dLoadFolderFileList(const AFolder: string);
+    function  dOpenFolderFileFromIndex(StartIndex, Step: Integer): Boolean;
+    procedure dUpdateFolderNavigationState;
 
     procedure dHandleOpenXqfMsg(var Msg: TMessage); message dCWMOPENXQF;
 
@@ -343,6 +363,7 @@ type
     FXQColW, FXQRowH: Integer;
 
     procedure dAutoPlayNextFile;
+    procedure dUpdateCurrentFileLabel(const AFilePath: string);
     function  OpenXQF(const Name: String): Boolean;
     procedure dEnableXQTableMenuItem(ABool: Boolean);
     procedure dLoadFileList;
@@ -365,7 +386,7 @@ var
 
 implementation
 
-uses XQSearch, XQTipsDlg;
+uses XQSearch, XQTipsDlg, FileCtrl;
 {$R *.DFM}
 
 //-------------------------------------------------------------------------
@@ -651,6 +672,201 @@ end;
 //-------------------------------------------------------------------------
 // 打开一个帮助文件
 //.........................................................................
+
+procedure TfrmMain.dResetFolderNavigation;
+begin
+  if FFolderFiles <> nil then FFolderFiles.Clear;
+  FCurrentFolder := '';
+  FCurrentFolderIndex := -1;
+
+  if Assigned(tbtCurrentFile) then
+  begin
+    tbtCurrentFile.Caption := '';
+    tbtCurrentFile.Enabled := False;
+  end;
+
+  if Assigned(actFolderPrevFile) then actFolderPrevFile.Enabled := False;
+  if Assigned(actFolderNextFile) then actFolderNextFile.Enabled := False;
+end;
+
+procedure TfrmMain.dUpdateFolderNavigationState;
+var
+  hasList, hasCurrent: Boolean;
+  sCaption: string;
+begin
+  hasList := (FFolderFiles <> nil) and (FFolderFiles.Count > 0);
+  hasCurrent := hasList and (FCurrentFolderIndex >= 0) and
+    (FCurrentFolderIndex < FFolderFiles.Count);
+
+  if hasCurrent then
+    sCaption := ExtractFileName(FFolderFiles[FCurrentFolderIndex])
+  else
+    sCaption := '';
+
+  if Assigned(tbtCurrentFile) then
+  begin
+    tbtCurrentFile.Caption := sCaption;
+    tbtCurrentFile.Enabled := False;
+  end;
+
+  if Assigned(actFolderPrevFile) then
+    actFolderPrevFile.Enabled := hasCurrent and (FCurrentFolderIndex > 0);
+  if Assigned(actFolderNextFile) then
+    actFolderNextFile.Enabled := hasCurrent and
+      (FCurrentFolderIndex < FFolderFiles.Count - 1);
+end;
+
+procedure TfrmMain.dLoadFolderFileList(const AFolder: string);
+const
+  cExts: array[0..0] of string = ('.xqf');
+var
+  sr: TSearchRec;
+  ext: string;
+  folder: string;
+  i: Integer;
+begin
+  dResetFolderNavigation;
+  if not DirectoryExists(AFolder) then Exit;
+
+  folder := AFolder;
+  if (folder <> '') and (folder[Length(folder)] <> '\') then
+    folder := folder + '\';
+
+  if FindFirst(folder + '*.*', faAnyFile, sr) = 0 then
+  begin
+    try
+      repeat
+        if (sr.Attr and faDirectory) = 0 then
+        begin
+          ext := AnsiLowerCase(ExtractFileExt(sr.Name));
+          for i := Low(cExts) to High(cExts) do
+          begin
+            if ext = cExts[i] then
+            begin
+              FFolderFiles.Add(ExpandFileName(folder + sr.Name));
+              Break;
+            end;
+          end;
+        end;
+      until FindNext(sr) <> 0;
+    finally
+      FindClose(sr);
+    end;
+  end;
+
+  if FFolderFiles.Count > 0 then
+  begin
+    FCurrentFolder := folder;
+    FFolderFiles.Sort;
+  end;
+  dUpdateFolderNavigationState;
+end;
+
+function TfrmMain.dOpenFolderFileFromIndex(StartIndex, Step: Integer): Boolean;
+var
+  idx: Integer;
+begin
+  Result := False;
+  if (FFolderFiles = nil) or (FFolderFiles.Count = 0) or (Step = 0) then Exit;
+
+  idx := StartIndex;
+  while (idx >= 0) and (idx < FFolderFiles.Count) do
+  begin
+    if OpenXQF(FFolderFiles[idx]) then
+    begin
+      FCurrentFolderIndex := idx;
+      dUpdateCurrentFileLabel(FFolderFiles[idx]);
+      Result := True;
+      Break;
+    end;
+    Inc(idx, Step);
+  end;
+
+  if not Result then
+    dUpdateFolderNavigationState;
+end;
+
+procedure TfrmMain.dUpdateCurrentFileLabel(const AFilePath: string);
+var
+  idx: Integer;
+begin
+  if Assigned(tbtCurrentFile) then
+  begin
+    tbtCurrentFile.Caption := ExtractFileName(AFilePath);
+    tbtCurrentFile.Enabled := False;
+  end;
+
+  if (FFolderFiles <> nil) and (AFilePath <> '') then
+  begin
+    idx := FFolderFiles.IndexOf(ExpandFileName(AFilePath));
+    if idx >= 0 then
+      FCurrentFolderIndex := idx;
+  end;
+
+  dUpdateFolderNavigationState;
+end;
+
+procedure TfrmMain.actFileOpenFolderExecute(Sender: TObject);
+var
+  sFolder: string;
+begin
+  if (MDIChildCount>=10) then
+  begin
+    Application.MessageBox(
+      '打开的窗口个数太多，请先关闭一些没有用的窗口再进行本操作。',
+      '系统信息',
+      MB_OK + MB_ICONWARNING + MB_DEFBUTTON1);
+      Exit;
+  end;
+
+  btnPlayListCloseClick(nil);
+
+  sFolder := FCurrentFolder;
+  if sFolder = '' then sFolder := FXqfDir;
+  if sFolder = '' then sFolder := GetCurrentDir;
+
+  if SelectDirectory('请选择包含受支持文件的文件夹', '', sFolder) then
+  begin
+    dLoadFolderFileList(sFolder);
+    if FFolderFiles.Count = 0 then
+    begin
+      Application.MessageBox('所选文件夹中没有可用的棋谱文件。',
+        '系统信息', MB_OK + MB_ICONINFORMATION + MB_DEFBUTTON1);
+      Exit;
+    end;
+
+    FXqfDir := sFolder;
+
+    if not dOpenFolderFileFromIndex(0, 1) then
+    begin
+      Application.MessageBox('未能从所选文件夹中打开任何文件。',
+        '系统信息', MB_OK + MB_ICONINFORMATION + MB_DEFBUTTON1);
+    end;
+  end;
+end;
+
+procedure TfrmMain.actFolderPrevFileExecute(Sender: TObject);
+begin
+  if (FFolderFiles = nil) or (FFolderFiles.Count = 0) then Exit;
+  if FCurrentFolderIndex <= 0 then Exit;
+
+  dOpenFolderFileFromIndex(FCurrentFolderIndex - 1, -1);
+end;
+
+procedure TfrmMain.actFolderNextFileExecute(Sender: TObject);
+var
+  startIndex: Integer;
+begin
+  if (FFolderFiles = nil) or (FFolderFiles.Count = 0) then Exit;
+
+  if FCurrentFolderIndex < 0 then
+    startIndex := 0
+  else
+    startIndex := FCurrentFolderIndex + 1;
+
+  dOpenFolderFileFromIndex(startIndex, 1);
+end;
+
 procedure TfrmMain.actHelpAboutExecute(Sender: TObject);
 begin
   frmXQAbout.ShowModal;
@@ -668,11 +884,47 @@ end;
 // 系统初始化
 //.........................................................................
 procedure TfrmMain.FormCreate(Sender: TObject);
+var
+  idx    : Integer;
+  baseDir: string;
+  function dAddNavIcon(const FileName: string): Integer;
+  var
+    bmpMask: TBitmap;
+    paths  : array[0..3] of string;
+    i      : Integer;
+  begin
+    Result := -1;
+    bmpMask := TBitmap.Create;
+    try
+      bmpMask.Transparent := True;
+      paths[0] := baseDir + FileName;
+      paths[1] := GetCurrentDir + '\Bitmap\' + FileName;
+      paths[2] := 'C:\Users\guo\Documents\XQStudio-\Bitmap\' + FileName;
+      paths[3] := '/Users/guo/Documents/XQStudio-/Bitmap/' + FileName;
+      for i := 0 to High(paths) do
+      begin
+        if FileExists(paths[i]) then
+        begin
+          bmpMask.LoadFromFile(paths[i]);
+          Result := imlMain.AddMasked(bmpMask, bmpMask.Canvas.Pixels[0, bmpMask.Height - 1]);
+          Break;
+        end;
+      end;
+    finally
+      bmpMask.Free;
+    end;
+  end;
 begin
   FIsOpenFromClipBoard := False;
   IsFileListLoaded := False;
   IsBitmapListLoaded:= False;
   FFirstActive     := True;
+
+  FFolderFiles := TStringList.Create;
+  FFolderFiles.Sorted := True;
+  FFolderFiles.Duplicates := dupIgnore;
+  FCurrentFolderIndex := -1;
+
   Self.Width       := 800;
   Self.Height      := 572;
 
@@ -754,8 +1006,22 @@ begin
   dLoadFileList;
   dLoadBitmapList;
 
+  // Load custom folder navigation icons from Bitmap folder (XQPrior.bmp / XQNext.bmp)
+  baseDir := ExtractFilePath(Application.ExeName);
+  if (baseDir <> '') and (baseDir[Length(baseDir)] <> '\') then
+    baseDir := baseDir + '\';
+  baseDir := baseDir + 'Bitmap\';
+
+  idx := dAddNavIcon('XQPrior.bmp');
+  if idx >= 0 then actFolderPrevFile.ImageIndex := idx;
+
+  idx := dAddNavIcon('XQNext.bmp');
+  if idx >= 0 then actFolderNextFile.ImageIndex := idx;
+
   FXqfDir              := ReadRegStr('RecentFileList', 'XqfInitialDir', '');
   OpenDialog.InitialDir:= FXqfDir;
+
+  dResetFolderNavigation;
 end;
 
 //-------------------------------------------------------------------------
@@ -1120,6 +1386,11 @@ begin
     GlobalDeleteAtom(XQStudioAtom);
   end;
 }
+end;
+
+procedure TfrmMain.FormDestroy(Sender: TObject);
+begin
+  FreeAndNil(FFolderFiles);
 end;
 
 procedure TfrmMain.btnPlayListCloseClick(Sender: TObject);

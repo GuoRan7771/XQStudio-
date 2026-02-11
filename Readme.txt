@@ -8,6 +8,13 @@ For personal reasons, I strongly wanted some new features. Since the original pr
 
 [XQStudio.exe](https://github.com/GuoRan7771/XQStudio-/releases/download/XQStudio_latest/XQStudio.exe)
 
+维护与更新说明 (2026-02-11-晚)
+- 新功能：在“文件/打开”下新增“打开文件夹…”，按文件名升序加载所选文件夹内受支持的棋谱文件并自动打开第一个，不支持的文件自动跳过。
+- 浏览优化：工具栏新增“上一文件 / 下一文件”按钮，并在旁边显示当前文件名，便于在同一文件夹内快速切换棋谱。
+
+Maintenance & Update (2026-02-11 PM)
+- Feature: Added “Open Folder…” under File/Open; loads supported game files from the chosen folder (name-sorted) and opens the first one; unsupported files are skipped.
+- Navigation: Toolbar now provides “Previous File / Next File” buttons plus a filename label for quick sibling navigation.
 维护与更新说明 (2026-02-11)
 - 目的：解决窗口拉伸时组件大小固定的问题，让棋盘与棋谱区域可随窗口大小调整，提升大屏/小屏使用体验。
 - 新功能：棋盘窗口支持等比例缩放——棋盘背景、棋子/落子标记、走法提示点会随窗口拉伸自动缩放与重排；右侧棋谱/备注区域高度随窗口自适应伸缩。

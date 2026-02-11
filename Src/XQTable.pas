@@ -683,6 +683,9 @@ end;
 // ´´½¨ÏóÆå×À
 //.........................................................................
 procedure TfrmXQTable.FormCreate(Sender: TObject);
+var
+  bmpToggle: TBitmap;
+  iconPath : string;
 begin
   isDemoTable        := False;
 
@@ -708,6 +711,23 @@ begin
   actToggleHints.ShortCut := ShortCut(Ord('Z'), []);
   actToggleHints.OnExecute := actToggleHintsExecute;
   actToggleHints.Checked := True;
+
+  // Load custom icon for hint toggle from Bitmap\imlA-23.bmp (fallback to absolute path)
+  bmpToggle := TBitmap.Create;
+  try
+    iconPath := ExtractFilePath(Application.ExeName) + 'Bitmap\imlA-23.bmp';
+    if not FileExists(iconPath) then
+      iconPath := '/Users/guo/Documents/XQStudio-/Bitmap/imlA-23.bmp';
+    if FileExists(iconPath) then
+    begin
+      bmpToggle.LoadFromFile(iconPath);
+      actToggleHints.ImageIndex := frmMain.imlMain.AddMasked(
+        bmpToggle, bmpToggle.Canvas.Pixels[0, bmpToggle.Height - 1]);
+    end;
+  finally
+    bmpToggle.Free;
+  end;
+
   tbtToggleHints := TToolButton.Create(tlbPlayRec);
   tbtToggleHints.Parent := tlbPlayRec;
   tbtToggleHints.Style := tbsCheck;
@@ -1001,6 +1021,7 @@ begin
   frmMain.ActiveXQTable            := Self;
   frmMain.dEnableXQTableMenuItem(True);
   frmMain.Caption := dCVersionInfo + ' - ' + ExtractFileName(XQFileName);
+  frmMain.dUpdateCurrentFileLabel(XQFileName);
   dRefreshXQInfo;
 end;
 

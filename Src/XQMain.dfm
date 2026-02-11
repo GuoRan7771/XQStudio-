@@ -18,6 +18,7 @@ object frmMain: TfrmMain
   OnActivate = FormActivate
   OnClose = FormClose
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnResize = FormResize
   OnShow = FormShow
   PixelsPerInch = 96
@@ -195,6 +196,38 @@ object frmMain: TfrmMain
       Left = 506
       Top = 2
       Action = actFileSearch
+    end
+    object ToolButton17: TToolButton
+      Left = 531
+      Top = 2
+      Width = 8
+      Caption = 'ToolButton17'
+      Style = tbsSeparator
+    end
+    object tbtFolderPrev: TToolButton
+      Left = 539
+      Top = 2
+      Action = actFolderPrevFile
+      AutoSize = False
+      Width = 32
+      Style = tbsButton
+    end
+    object tbtFolderNext: TToolButton
+      Left = 571
+      Top = 2
+      Action = actFolderNextFile
+      AutoSize = False
+      Width = 32
+      Style = tbsButton
+    end
+    object tbtCurrentFile: TToolButton
+      Left = 603
+      Top = 2
+      Caption = ''
+      Enabled = False
+      AutoSize = False
+      Width = 200
+      Style = tbsButton
     end
   end
   object pnlXQStudioLogo: TPanel
@@ -5817,6 +5850,10 @@ object frmMain: TfrmMain
         Action = actFileOpen
         Caption = '打开(&O)'
       end
+      object FileOpenFolderItem: TMenuItem
+        Action = actFileOpenFolder
+        Caption = '打开文件夹...'
+      end
       object FileCloseItem: TMenuItem
         Action = actFileClose
         Caption = '关闭(&C)'
@@ -6094,7 +6131,14 @@ object frmMain: TfrmMain
       ShortCut = 16463
       OnExecute = actFileOpenExecute
     end
-    object actFileClose: TWindowClose
+        object actFileOpenFolder: TAction
+      Category = 'File'
+      Caption = '打开文件夹(&D)...'
+      Hint = '打开文件夹|按名称顺序载入首个支持的文件'
+      ImageIndex = 7
+      OnExecute = actFileOpenFolderExecute
+    end
+object actFileClose: TWindowClose
       Category = 'File'
       Caption = '&Close'
       Hint = '关闭|关闭当前文件'
@@ -6193,7 +6237,23 @@ object frmMain: TfrmMain
       ShortCut = 16454
       OnExecute = actFileSearchExecute
     end
-    object actToolsAutoPlay: TAction
+        object actFolderPrevFile: TAction
+      Category = 'File'
+      Caption = '上一个'
+      Enabled = False
+      Hint = '上一文件|打开当前文件夹中的上一文件'
+      ImageIndex = 1
+      OnExecute = actFolderPrevFileExecute
+    end
+    object actFolderNextFile: TAction
+      Category = 'File'
+      Caption = '下一个'
+      Enabled = False
+      Hint = '下一文件|打开当前文件夹中的下一文件'
+      ImageIndex = 2
+      OnExecute = actFolderNextFileExecute
+    end
+object actToolsAutoPlay: TAction
       Category = 'Tools'
       Caption = '自动播放(双击棋谱)'
       Enabled = False

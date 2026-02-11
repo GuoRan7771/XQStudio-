@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+
+# Delphi build outputs
+*.dcu
+*.dcp
+*.bpl
+*.bpi
+*.exe
+*.dll
+*.ocx
+*.tds
+*.map
+*.obj
+*.o
+*.a
+
+# Delphi IDE user files
+*.dsk
+*.local
+*.identcache
+*.tvsconfig
+*.groupproj.local
+*.dproj.local
+*.stat
+__history/
+__recovery/
+
+# Backups and temp files
+*.~*
+*.bak
+*.tmp
+*.log
+
+# Java build outputs
+*.class
