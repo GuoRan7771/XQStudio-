@@ -398,12 +398,17 @@ type
     procedure tbtSaveQituBitmapClick(Sender: TObject);
     procedure ppmBitmapCopyClick(Sender: TObject);
     procedure ppmBitmapSaveAsBmpClick(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
     FDragImgXY      : TImage;
     FReverseBoardH  : Boolean;
+    FReverseBoardV  : Boolean;
+    FLayoutInProgress: Boolean;
     FNextMoveMarks  : TList;
     isShowHints    : Boolean;
+    function  dPieceSize: Integer;
+    procedure dUpdateBoardLayout;
     procedure dSetupXQBoard;                            // 设置棋盘
     procedure dSetAddVarStepMode(tf: dTBoolean);
     procedure ClearNextMoveMarks;
@@ -524,11 +529,14 @@ end;
 function TfrmXQTable.imgGetImgXY(X, Y: Integer): TImage;
 var
   i, j: Integer;
+  Margin: Integer;
 begin
+  Margin := dPieceSize div 8;
+  if Margin < 1 then Margin := 1;
   for i:=0 to 8 do for j:= 0 to 9 do    // 搜索所有的兵站
   begin
-    if (X>imgXY[i,j].Left+4)and(X<imgXY[i,j].Left+imgXY[i,j].Width-4) and
-       (Y>imgXY[i,j].Top+4)and(Y<imgXY[i,j].Top +imgXY[i,j].Height-4) then
+    if (X>imgXY[i,j].Left+Margin)and(X<imgXY[i,j].Left+imgXY[i,j].Width-Margin) and
+       (Y>imgXY[i,j].Top+Margin)and(Y<imgXY[i,j].Top +imgXY[i,j].Height-Margin) then
     begin
       imgGetImgXY := imgXY[i, j];  Exit;
     end;
@@ -550,8 +558,6 @@ begin
 end;
 
 procedure TfrmXQTable.ShowNextMovesForCurrentNode;
-const
-  cHintSize = 18;
 var
   PN        : dTXQPlayNode;
   expectRed : Boolean;
@@ -559,10 +565,13 @@ var
   img       : TImage;
   shp       : TShape;
   X, Y      : Integer;
+  hintSize  : Integer;
 begin
   ClearNextMoveMarks;
   if (not isShowHints) then Exit;
   if (XQ = nil) or (XQ.DispNode = nil) then Exit;
+  hintSize := Round(dPieceSize * (18 / 34));
+  if hintSize < 8 then hintSize := 8;
 
   // 根据下一步的起手方决定颜色，若 WhoPlay 未同步，以第一个子节点判断
   PN := XQ.DispNode.LChild;
@@ -591,14 +600,14 @@ begin
       shp := TShape.Create(Self);
       shp.Parent := img.Parent;
       shp.Shape  := stCircle;
-      shp.Width  := cHintSize;
-      shp.Height := cHintSize;
+      shp.Width  := hintSize;
+      shp.Height := hintSize;
       shp.Brush.Style := bsSolid;
       if expectRed then shp.Brush.Color := clRed else shp.Brush.Color := clBlack;
       shp.Pen.Color := clWhite;
       shp.Pen.Width := 2;
-      shp.Left := img.Left + (img.Width - cHintSize) div 2;
-      shp.Top  := img.Top  + (img.Height - cHintSize) div 2;
+      shp.Left := img.Left + (img.Width - hintSize) div 2;
+      shp.Top  := img.Top  + (img.Height - hintSize) div 2;
       shp.Enabled := False;           // UI 提示，不拦截鼠标
       shp.BringToFront;
       FNextMoveMarks.Add(shp);
@@ -631,27 +640,25 @@ begin
 
   for i:=0 to 8 do for j:=0 to 9 do
   begin
-    imgXY[i,j].Left   := 4   + i*40;
-    imgXY[i,j].Top    := 376 - j*40;
-    imgXY[i,j].Width  := 34;
-    imgXY[i,j].Height := 34;
+    imgXY[i,j].Stretch      := True;
+    imgXY[i,j].Center       := True;
     imgXY[i,j].PopupMenu := ppmPlayRec;
   end;
   imgXQBoard.PopupMenu   := ppmPlayRec;
 
-  imgRedNum.Visible   := False;
-  imgRedNum.Left      := imgXQBoard.Left;
-  imgRedNum.Top       := imgXQBoard.Top;
-  imgBlkNum.Visible   := False;
-  imgBlkNum.Left      := imgXQBoard.Left;
-  imgBlkNum.Top       := imgXQBoard.Top + 409;
+  imgXQBoard.AutoSize     := False;
+  imgXQBoard.Stretch      := True;
 
-  imgQZMove.Width      := 34;
-  imgQZMove.Height     := 34;
-  imgMovePosTo.Width   := 34;
-  imgMovePosTo.Height  := 34;
-  imgMovePosFrom.Width := 34;
-  imgMovePosFrom.Height:= 34;
+  imgRedNum.Visible      := False;
+  imgRedNum.AutoSize     := False;
+  imgRedNum.Stretch      := True;
+  imgBlkNum.Visible      := False;
+  imgBlkNum.AutoSize     := False;
+  imgBlkNum.Stretch      := True;
+
+  imgQZMove.Stretch        := True;
+  imgMovePosTo.Stretch     := True;
+  imgMovePosFrom.Stretch   := True;
 
 
   // 设置所有棋子的图片
@@ -668,6 +675,8 @@ begin
                        imgMovePosFrom,imgMovePosTo,
                        picQZ,lbxPlayRec,lbxPlayVar,memPlayRec);
   if (XQ=nil) then Self.Close;
+
+  dUpdateBoardLayout;
 end;
 
 //-------------------------------------------------------------------------
@@ -682,12 +691,13 @@ begin
   imgXQBoard.Picture := frmMain.imgXQBoard.Picture;
 
   // 设置棋桌的大小
-  Self.Left   := 0;                 Self.Top := 0;
-  Self.Height := dCXQTableHeight; Self.Width := dCXQTableWidth;
+  Self.Left   := 0;
+  Self.Top    := 0;
+  Self.Height := dCXQTableHeight;
+  Self.Width  := dCXQTableWidth;
 
   imgXQBoard.Left := 0;
   imgXQBoard.Top  := 0;
-  pnlLeft.Width        := imgXQBoard.Left + imgXQBoard.Width + 8;
   pnlRightMargin.Width := 3;
 
   XQ := nil;
@@ -704,8 +714,14 @@ begin
   tbtToggleHints.Action := actToggleHints;
   FNextMoveMarks := TList.Create;
 
+  FDragImgXY         := nil;
+  FReverseBoardH     := False;
+  FReverseBoardV     := False;
+  FLayoutInProgress  := False;
+
   // 设置象棋盘
   dSetupXQBoard;
+  Self.OnResize := FormResize;
 
   tmrAutoPlay.Interval := iAutoPlayTime;
 
@@ -739,9 +755,6 @@ begin
       tmrAutoPlay.Enabled  := True;
     end;
   end;
-
-  FDragImgXY     := nil;
-  FReverseBoardH := False;
 
   if (not frmMain.IsBitmapListLoaded) then
   begin
@@ -792,6 +805,8 @@ end;
 // DragOver
 procedure TfrmXQTable.imgXYDragOver(Sender, Source: TObject; X,
   Y: Integer; State: TDragState; var Accept: Boolean);
+var
+  HalfPiece: Integer;
 begin
   if (Sender=nil) then Exit;
   Accept := True;
@@ -799,8 +814,10 @@ begin
   begin
     if (XQ.QiziMove <> nil) then        // 棋子跟着光标移动
     begin
-      imgQZMove.Left := Left + X - 17;
-      imgQZMove.Top  := Top  + Y - 17;
+      HalfPiece := imgQZMove.Width div 2;
+      if HalfPiece <= 0 then HalfPiece := 17;
+      imgQZMove.Left := Left + X - HalfPiece;
+      imgQZMove.Top  := Top  + Y - HalfPiece;
     end;
   end;
 end;
@@ -855,6 +872,8 @@ end;
 // MouseDown
 procedure TfrmXQTable.imgXYMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  img: TImage;
 begin
   if (Sender=nil) then Exit;
   tmrMoveBlink.Enabled := False;
@@ -863,7 +882,8 @@ begin
     try
       imgMovePosTo.Visible := False;
       XQ.dStartMoveFromXY(FDragImgXY.Tag);
-      imgXYEndDrag(nil, Sender, 16, 16); //X, Y);
+      img := Sender as TImage;
+      imgXYEndDrag(nil, Sender, img.Width div 2, img.Height div 2);
     except
     end;
   end;
@@ -1135,42 +1155,23 @@ begin
 end;
 
 procedure TfrmXQTable.dReverseBoardV;
-var
-  i, j, iLeft, iTop: dTINT32;
 begin
   imgMovePosTo.Visible   := False;
   imgMovePosFrom.Visible := False;
-  for i:=0 to 8 do for j:=0 to 4 do
-  begin
-    iLeft                := imgXY[i, j].Left;
-    iTop                 := imgXY[i, j].Top;
-    imgXY[i, j].Left     := imgXY[8-i, 9-j].Left;
-    imgXY[i, j].Top      := imgXY[8-i, 9-j].Top;
-    imgXY[8-i, 9-j].Left := iLeft;
-    imgXY[8-i, 9-j].Top  := iTop;
-  end;
+  FReverseBoardV := not FReverseBoardV;
   imgRedNum.Visible := not imgRedNum.Visible;
   imgBlkNum.Visible := not imgBlkNum.Visible;
+  dUpdateBoardLayout;
   XQ.dDispQiziAtRecNo(XQ.DispStepNo);    // 为了显示最后移动棋子的标记
 end;
 
 procedure TfrmXQTable.dReverseBoardH;
-var
-  i, j, iLeft, iTop: dTINT32;
 begin
   FReverseBoardH         := not FReverseBoardH;
   XQ.ReverseH            := FReverseBoardH;
   imgMovePosTo.Visible   := False;
   imgMovePosFrom.Visible := False;
-  for i:=0 to 3 do for j:=0 to 9 do
-  begin
-    iLeft                := imgXY[i, j].Left;
-    iTop                 := imgXY[i, j].Top;
-    imgXY[i, j].Left     := imgXY[8-i, j].Left;
-    imgXY[i, j].Top      := imgXY[8-i, j].Top;
-    imgXY[8-i, j].Left   := iLeft;
-    imgXY[8-i, j].Top    := iTop;
-  end;
+  dUpdateBoardLayout;
 //
   XQ.dRefreshRecStr;
 //
@@ -1242,10 +1243,7 @@ end;
 
 procedure TfrmXQTable.pgcInfoPageResize(Sender: TObject);
 begin
-  with Sender as TPageControl do
-  begin
-    Height := imgXQBoard.Height - pnlRTop.Height; 
-  end;
+  // Let Align handle sizing; do not force a fixed height.
 end;
 
 procedure TfrmXQTable.pnlRightMarginResize(Sender: TObject);
@@ -1254,6 +1252,144 @@ begin
   begin
     width := 3;
   end;
+end;
+
+function TfrmXQTable.dPieceSize: Integer;
+begin
+  Result := 34;
+  try
+    if (imgXY[0,0] <> nil) and (imgXY[0,0].Width > 0) then
+      Result := imgXY[0,0].Width;
+  except
+  end;
+end;
+
+procedure TfrmXQTable.dUpdateBoardLayout;
+const
+  cLeftPaddingWidth    = 8;
+  cRightMarginWidth    = 3;
+  cMinRightPanelWidth  = 300;
+
+  cBaseBoardWidth      = 362;
+  cBaseBoardHeight     = 425;
+  cBaseCellSize        = 40;
+  cBasePieceSize       = 34;
+  cBaseXYLeft          = 4;
+  cBaseXYTopMargin     = 16;
+  cBaseBlkNumTop       = 409;
+  cBaseNumHeight       = 16;
+var
+  baseBoardW, baseBoardH: Integer;
+  availW: Integer;
+  scaleW, scaleH, scale: Double;
+  boardW, boardH: Integer;
+  pieceSize: Integer;
+  numHeight: Integer;
+  i, j: Integer;
+  displayI, displayJ: Integer;
+  baseLeft, baseTop: Integer;
+
+  function ScaleInt(BaseValue: Integer): Integer;
+  begin
+    Result := Round(BaseValue * scale);
+  end;
+
+begin
+  if FLayoutInProgress then Exit;
+  if (pnlLeft = nil) or (imgXQBoard = nil) then Exit;
+  if (ClientWidth <= 0) or (ClientHeight <= 0) then Exit;
+
+  FLayoutInProgress := True;
+  try
+    baseBoardW := imgXQBoard.Picture.Width;
+    baseBoardH := imgXQBoard.Picture.Height;
+    if baseBoardW <= 0 then baseBoardW := cBaseBoardWidth;
+    if baseBoardH <= 0 then baseBoardH := cBaseBoardHeight;
+
+    // Keep a minimum width for the right panel unless "board only" mode is enabled.
+    availW := ClientWidth - cRightMarginWidth - cLeftPaddingWidth;
+    if not isShowBoardOnly then
+      availW := availW - cMinRightPanelWidth;
+    if availW < 80 then availW := 80;
+
+    scaleW := availW / baseBoardW;
+    scaleH := ClientHeight / baseBoardH;
+    scale  := scaleW;
+    if scaleH < scale then scale := scaleH;
+    if scale < 0.1 then scale := 0.1;
+
+    boardW := ScaleInt(baseBoardW);
+    boardH := ScaleInt(baseBoardH);
+    if boardW < 100 then boardW := 100;
+    if boardH < 100 then boardH := 100;
+
+    imgXQBoard.Left   := 0;
+    imgXQBoard.Top    := 0;
+    imgXQBoard.Width  := boardW;
+    imgXQBoard.Height := boardH;
+    pnlLeft.Width     := boardW + cLeftPaddingWidth;
+
+    // Update "number" overlays (top and bottom).
+    numHeight := ScaleInt(cBaseNumHeight);
+    if numHeight < 1 then numHeight := 1;
+
+    imgRedNum.Left   := imgXQBoard.Left;
+    imgRedNum.Top    := imgXQBoard.Top;
+    imgRedNum.Width  := boardW;
+    imgRedNum.Height := numHeight;
+
+    imgBlkNum.Left   := imgXQBoard.Left;
+    imgBlkNum.Top    := imgXQBoard.Top + ScaleInt(cBaseBlkNumTop);
+    imgBlkNum.Width  := boardW;
+    imgBlkNum.Height := numHeight;
+
+    // Drag image / last-move marks
+    pieceSize := ScaleInt(cBasePieceSize);
+    if pieceSize < 8 then pieceSize := 8;
+    imgQZMove.Width       := pieceSize;
+    imgQZMove.Height      := pieceSize;
+    imgMovePosTo.Width    := pieceSize;
+    imgMovePosTo.Height   := pieceSize;
+    imgMovePosFrom.Width  := pieceSize;
+    imgMovePosFrom.Height := pieceSize;
+
+    // Lay out the 9x10 grid using the same base coordinates as the original UI.
+    // Position depends on current "reverse" flags.
+    for i := 0 to 8 do
+      for j := 0 to 9 do
+      begin
+        displayI := i;
+        displayJ := j;
+        if FReverseBoardV then
+        begin
+          displayI := 8 - displayI;
+          displayJ := 9 - displayJ;
+        end;
+        if FReverseBoardH then
+        begin
+          displayI := 8 - displayI;
+        end;
+
+        baseLeft := cBaseXYLeft + displayI * cBaseCellSize;
+        baseTop  := cBaseXYTopMargin + (9 - displayJ) * cBaseCellSize;
+
+        imgXY[i, j].Left   := imgXQBoard.Left + ScaleInt(baseLeft);
+        imgXY[i, j].Top    := imgXQBoard.Top  + ScaleInt(baseTop);
+        imgXY[i, j].Width  := pieceSize;
+        imgXY[i, j].Height := pieceSize;
+      end;
+
+    ClearNextMoveMarks;
+    ShowNextMovesForCurrentNode;
+    if XQ <> nil then XQ.dDispQiziAtRecNo(XQ.DispStepNo);
+  finally
+    FLayoutInProgress := False;
+  end;
+end;
+
+procedure TfrmXQTable.FormResize(Sender: TObject);
+begin
+  dUpdateBoardLayout;
 end;
 
 procedure dPlayRecHook;

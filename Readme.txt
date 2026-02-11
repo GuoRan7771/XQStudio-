@@ -8,6 +8,18 @@ For personal reasons, I strongly wanted some new features. Since the original pr
 
 [XQStudio.exe](https://github.com/GuoRan7771/XQStudio-/releases/download/XQStudio_latest/XQStudio.exe)
 
+维护与更新说明 (2026-02-11)
+- 目的：解决窗口拉伸时组件大小固定的问题，让棋盘与棋谱区域可随窗口大小调整，提升大屏/小屏使用体验。
+- 新功能：棋盘窗口支持等比例缩放——棋盘背景、棋子/落子标记、走法提示点会随窗口拉伸自动缩放与重排；右侧棋谱/备注区域高度随窗口自适应伸缩。
+- 推演改进：推演棋盘默认打开的窗口横向更宽，并默认显示右侧棋谱模块（不再默认“只显示棋盘”），便于推演时直接看到棋谱。
+- 影响：仅界面布局与显示行为调整，不改变走棋、推演、棋谱导入导出与存盘格式等核心功能。
+
+Maintenance & Update (2026-02-11)
+- Purpose: Fix the issue where the UI kept a fixed size when resizing the window; make the board and record panels adapt to different screen sizes.
+- Feature: The chessboard window now scales proportionally—board background, piece/last-move markers, and move hint dots scale and re-layout automatically when resizing; the record/remark panels on the right also resize properly.
+- Demo: The “Demo” (analysis) window opens wider by default and shows the record panel by default (no longer “board-only”), so the record module is visible immediately.
+- Scope: UI layout and rendering only; core logic, analysis flow, import/export, and save format remain unchanged.
+
 维护与更新说明 (2026-02-01)
 - 目的：个人使用，增加可开关的红/黑走法提示点，便于查看下一手落点。
 - 新功能：工具栏开关按钮 + 快捷键 Z，可快速显示/隐藏当前一方所有候选落点（红/黑点），默认开启；已为按钮预留空间，不遮挡“上一手/下一手”等原有控件。

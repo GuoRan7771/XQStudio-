@@ -1527,7 +1527,8 @@ begin
   ActiveXQTable.XQ.WhoPlay         := CurrentXQTable.XQ.WhoPlay;
   ActiveXQTable.XQ.PlayTree.XYf    := CurrentXQTable.XQ.DispNode.XYf;
   ActiveXQTable.XQ.PlayTree.XYt    := CurrentXQTable.XQ.DispNode.XYt;
-  ActiveXQTable.dShowBoardOnly(True);
+  ActiveXQTable.dShowBoardOnly(False);
+  ActiveXQTable.Width := dCXQTableWidth + 260;
   ActiveXQTable.lbxPlayRecClick(ActiveXQTable.lbxPlayRec);
   ActiveXQTable.Left  := 406;
   ActiveXQTable.Caption     := 'Õ∆—›∆Â≈Ã - ' + CurrentXQTable.Caption;
